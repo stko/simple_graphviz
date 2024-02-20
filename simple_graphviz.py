@@ -2,6 +2,8 @@ import sys
 import os
 import yaml
 import clipboard
+from pathlib import Path
+
 output = ""
 documentation = {}
 index = 1
@@ -10,19 +12,24 @@ def collect_output(text):
     global output
     output += str(text)+os.linesep
 
-def print_output():
+def print_output(output_file_path):
     global output
-    print(output,file=sys. stderr)
+    print(output,file=sys.stderr)
     try:
         clipboard.copy(output)
-        print("result copied into clipboard",file=sys. stderr)
+        print("result copied into clipboard",file=sys.stderr)
+        with open(output_file_path,"w",encoding="utf-8") as fout:
+            fout.write(output)
+            fout.close
     except:
         pass
 
-def print_doc():
+def print_doc(output_file_path):
     global documentation
-    for item in sorted(documentation.keys()):
-        print(f"## {item}\n{documentation[item]}\n")
+    with open(output_file_path,"w",encoding="utf-8") as fout:
+        for item in sorted(documentation.keys()):
+            fout.write(f"## {item}\n{documentation[item]}\n")
+        fout.close
 
 def init_node(name, is_signal):
     global index, nodesn
@@ -113,12 +120,13 @@ if len(sys.argv) > 1:
 else:
     input_file_path_array = ["simple_graphviz.yaml"]
 for input_file_path in input_file_path_array:
-    with open(input_file_path, "r") as stream:
+    file_path = Path(input_file_path)
+    with open(input_file_path, "r", encoding="utf-8") as stream:
         try:
             nodes_raw = yaml.safe_load(stream)
             transform_nodes(nodes_raw)
         except yaml.YAMLError as exc:
             print(exc)
 create_output()
-print_output()
-print_doc()
+print_output(file_path.stem+".graphiz")
+print_doc(file_path.stem+".md")
